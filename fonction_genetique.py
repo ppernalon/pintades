@@ -8,7 +8,7 @@ class FonctionGenetique:
     def __init__(self, nb_entrees, nb_sorties):
         self.nb_entrees = nb_entrees
         self.nb_sorties = nb_sorties
-        self.nb_neurones = 5
+        self.nb_neurones = 1000
         self.matrix1 = np.random.rand(nb_entrees, self.nb_neurones)
         self.matrix2 = np.random.rand(self.nb_neurones, nb_sorties)
 
