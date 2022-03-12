@@ -67,7 +67,7 @@ class SolverGenetique:
         return (max_treso, pourcentages, self.meilleure_fonction_genetique)
 
 
-SG = SolverGenetique(500, 0.2, 100)
+SG = SolverGenetique(200, 0.2, 100)
 max_treso, pourcentages, meilleures_fonctions = \
     SG.resoudre(initial_estimation.budget_initial, initial_estimation.pintadesInit, [])
 
