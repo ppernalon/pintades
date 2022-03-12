@@ -21,17 +21,15 @@ def suite(u_0, N):
     return u_n[-1], u_n[727], budgetByDay
 
 nber_pintades_initial= suite(2,728)[0]
-print('nombre de pintades au bout de 2ans', nber_pintades_initial)
 
 def budget(suite):
     suite = suite(2, 1092)
     twoYearNber = suite[1]
     threeYearNber = suite[0]
-    print("nombre de pintades au bout de 3ans", threeYearNber)
     budgetEstimation = 3.5 * (threeYearNber-twoYearNber) + suite[2]
     return(budgetEstimation)
 
-print("budget necessaire:", budget(suite))
+budget_initial = (budget(suite) / 12) * 3
 
 def initialisation_pintades(N):
     u_n = [2]
@@ -48,7 +46,6 @@ def initialisation_pintades(N):
                     pintades.append(Pintade("femelle", "INT", (2*365-k)//30))
     return (u_n[-1], pintades)
 
-pintadesInit = initialisation_pintades(728)
-print(pintadesInit[0],'number Pintades')
-print(pintadesInit[1][60].age,'age de la 60e pintade')
+pintadesInit = initialisation_pintades(728)[1]
+
 

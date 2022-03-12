@@ -1,6 +1,7 @@
 from const import prix_oeuf_inte, prix_oeufs_exte, prix_vente_adulte_inte, prix_vente_adulte_exte, \
-    prix_vente_vielle_exte, prix_vente_vielle_inte, nombre_maximal_pintades, cout_nouriture, cout_oeuf, cout_veto, cout_pintade_inte, cout_pintade_exte
-from numpy import random
+    prix_vente_vielle_exte, prix_vente_vielle_inte, nombre_maximal_pintades, cout_nouriture, cout_oeuf, cout_veto, \
+    cout_pintade_inte, cout_pintade_exte
+from numpy import random, where
 
 
 class Oeuf:
@@ -67,6 +68,38 @@ class Actif:
         for pintade in self.pintades[self.etape]:
             pintade.vieillir()
 
+    def oeufs_ext(self):
+        oeufs = self.oeufs[self.etape]
+        oeufs_ext = []
+        for oeuf in oeufs:
+            if oeuf.env == "EXT":
+                oeufs_ext.append(oeuf)
+        return oeufs_ext
+
+    def oeufs_int(self):
+        oeufs = self.oeufs[self.etape]
+        oeufs_int = []
+        for oeuf in oeufs:
+            if oeuf.env == "INT":
+                oeufs_int.append(oeuf)
+        return oeufs_int
+
+    def femelle_ext(self):
+        pintades = self.pintades[self.etape]
+        pintades_ext = []
+        for pintade in pintades:
+            if pintade.env == "EXT" and pintade.sexe == "femelle" and pintade.age >= 6:
+                pintades_ext.append(pintade)
+        return pintades_ext
+
+    def femelle_int(self):
+        pintades = self.pintades[self.etape]
+        pintades_int = []
+        for pintade in pintades:
+            if pintade.env == "INT" and pintade.sexe == "femelle" and pintade.age >= 6:
+                pintades_int.append(pintade)
+        return pintades_int
+
     def vendre_pintades(self, adulte_femelle_int, adulte_femelle_exte):
         sorted_by_ages = list(self.pintades[self.etape])
         sorted_by_ages.sort(key=(lambda p: p.age), reverse=True)
@@ -82,10 +115,12 @@ class Actif:
                 vendu = True
             if pintade_a_vendre.age > 6 * 12:  # 6 ans
                 vendu = True
-            if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "EXT") and (nb_vendu_ext < adulte_femelle_exte) and (pintade_a_vendre.age > 6):
+            if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "EXT") and (
+                    nb_vendu_ext < adulte_femelle_exte) and (pintade_a_vendre.age > 6):
                 nb_vendu_ext += 1
                 vendu = True
-            if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "INT") and (nb_vendu_int < adulte_femelle_int) and (pintade_a_vendre.age > 6):
+            if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "INT") and (
+                    nb_vendu_int < adulte_femelle_int) and (pintade_a_vendre.age > 6):
                 nb_vendu_int += 1
                 vendu = True
             if vendu:
@@ -132,21 +167,20 @@ class Simulation:
     def respect_des_contraintes(self):
         treso_positive = self.actif.treso[self.etape] >= 0
         nombre_pintades = 0 < len(self.actif.pintades[self.etape]) < nombre_maximal_pintades
-        nombre_oeufs = len(self.actif.oeufs[self.etape]) >= 0
 
-        return treso_positive and nombre_pintades and nombre_oeufs
+        return treso_positive and nombre_pintades
 
     def calculer_etape(self):
-        decision_en_cours = self.decisions[self.etape]
+        decision_en_cours = self.decisions
 
         self.actif.initialiser_etape()
         self.etape += 1
 
         # vente
-        nb_femelle_ext = decision_en_cours[0]
-        nb_femelle_int = decision_en_cours[1]
-        nb_oeuf_ext = decision_en_cours[2]
-        nb_oeuf_int = decision_en_cours[3]
+        nb_femelle_ext = int(decision_en_cours[0] * len(self.actif.femelle_ext()))
+        nb_femelle_int = int(decision_en_cours[1] * len(self.actif.femelle_int()))
+        nb_oeuf_ext = int(decision_en_cours[2] * len(self.actif.oeufs_ext()))
+        nb_oeuf_int = int(decision_en_cours[3] * len(self.actif.oeufs_int()))
         self.actif.vendre_oeufs(nb_oeuf_int, nb_oeuf_ext)
         self.actif.vendre_pintades(nb_femelle_int, nb_femelle_ext)
 
@@ -164,7 +198,7 @@ class Simulation:
         # ponte
         nouveaux_oeufs = []
         for pintade in self.actif.pintades[self.etape]:
-            for k in range(30//3):
+            for k in range(30 // 3):
                 oeuf = pintade.pondre()
                 if oeuf is not None:
                     nouveaux_oeufs.append(oeuf)
@@ -183,7 +217,7 @@ class Simulation:
 
     def sim(self):
         for i in range(self.etape_final):
-            self.calculer_etape()
-            if not(self.respect_des_contraintes()):
+            if not (self.respect_des_contraintes()):
                 return self.actif.treso + [-1]
+            self.calculer_etape()
         return self.actif.treso
