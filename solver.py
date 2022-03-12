@@ -10,14 +10,14 @@ class Solver:
         self.nombre_max_etape = max_etape  # nombre de mois
 
     def resoudre(self):
-        x = np.linspace(1, 0, 40)
+        x = np.linspace(0.95, 0, 20)
         pourcentages_chaque_mois = itertools.product(x, repeat=4)
         max = 0
         arg_max = -1
         sim_max = None
         for p in pourcentages_chaque_mois:
             actif = Actif(initial_estimation.budget_initial, initial_estimation.pintadesInit, [])
-            simulation = Simulation(actif, p)
+            simulation = Simulation(actif, p, self.nombre_max_etape)
             treso_totale = simulation.sim()
             treso_finale = treso_totale[-1]
             if treso_finale > max:
@@ -36,9 +36,9 @@ class Solver:
 
 
 t1 = time()
-solver = Solver(3)
-t2 = time()
+solver = Solver(120)
 arg_max, sim_max = solver.resoudre()
+t2 = time()
 print('meilleur pourcentage : ', arg_max)
 print("evolution mensuelle treso : ", sim_max.actif.treso)
 print("qte oeufs mensuelle : ",

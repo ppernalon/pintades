@@ -1,3 +1,5 @@
+import numpy as np
+
 from const import prix_oeuf_inte, prix_oeufs_exte, prix_vente_adulte_inte, prix_vente_adulte_exte, \
     prix_vente_vielle_exte, prix_vente_vielle_inte, nombre_maximal_pintades, cout_nouriture, cout_oeuf, cout_veto, \
     cout_pintade_inte, cout_pintade_exte
@@ -88,7 +90,7 @@ class Actif:
         pintades = self.pintades[self.etape]
         pintades_ext = []
         for pintade in pintades:
-            if pintade.env == "EXT" and pintade.sexe == "femelle" and pintade.age >= 6:
+            if pintade.env == "EXT" and pintade.sexe == "femelle" and 6*12 > pintade.age >= 6:
                 pintades_ext.append(pintade)
         return pintades_ext
 
@@ -96,11 +98,19 @@ class Actif:
         pintades = self.pintades[self.etape]
         pintades_int = []
         for pintade in pintades:
-            if pintade.env == "INT" and pintade.sexe == "femelle" and pintade.age >= 6:
+            if pintade.env == "INT" and pintade.sexe == "femelle" and 6*12 > pintade.age >= 6:
                 pintades_int.append(pintade)
         return pintades_int
 
-    def vendre_pintades(self, adulte_femelle_int, adulte_femelle_exte):
+    def poussins(self):
+        pintades = self.pintades[self.etape]
+        poussins = []
+        for pintade in pintades:
+            if pintade.age < 6:
+                poussins.append(pintade)
+        return poussins
+
+    def vendre_pintades(self, adulte_femelle_int, adulte_femelle_ext):
         sorted_by_ages = list(self.pintades[self.etape])
         sorted_by_ages.sort(key=(lambda p: p.age), reverse=True)
         nb_vendu_int = 0
@@ -116,7 +126,7 @@ class Actif:
             if pintade_a_vendre.age > 6 * 12:  # 6 ans
                 vendu = True
             if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "EXT") and (
-                    nb_vendu_ext < adulte_femelle_exte) and (pintade_a_vendre.age > 6):
+                    nb_vendu_ext < adulte_femelle_ext) and (pintade_a_vendre.age > 6):
                 nb_vendu_ext += 1
                 vendu = True
             if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "INT") and (
@@ -158,10 +168,10 @@ class Actif:
 
 
 class Simulation:
-    def __init__(self, actif, decisions):
+    def __init__(self, actif, decisions, max_etape):
         self.actif = actif
         self.etape = 0
-        self.etape_final = len(decisions)
+        self.etape_final = max_etape
         self.decisions = decisions
 
     def respect_des_contraintes(self):
@@ -208,7 +218,86 @@ class Simulation:
         self.actif.oeufs[self.etape] += nouveaux_oeufs
 
         # cout pour l'étape
-        self.actif.treso[self.etape] -= len(self.actif.pintades[self.etape]) * cout_nouriture / 12  # nourriture
+        nb_poussins = len(self.actif.poussins())
+        nb_total_pintades = len(self.actif.pintades[self.etape])
+        self.actif.treso[self.etape] -= ( nb_total_pintades - nb_poussins / 2) * cout_nouriture / 12  # nourriture
+        for pintadeDebutEtape in self.actif.pintades[self.etape]:
+            if pintadeDebutEtape.env == "EXT":
+                self.actif.treso[self.etape] -= cout_pintade_inte
+            else:
+                self.actif.treso[self.etape] -= cout_pintade_exte
+
+    def sim(self):
+        for i in range(self.etape_final):
+            if not (self.respect_des_contraintes()):
+                return self.actif.treso + [-1]
+            self.calculer_etape()
+        return self.actif.treso
+
+
+
+class Simulation_Genetique:
+    def __init__(self, actif, functionGen, max_etape):
+        self.actif = actif
+        self.etape = 0
+        self.etape_final = max_etape
+        self.decisions = []
+        self.functionGen = functionGen
+
+    def respect_des_contraintes(self):
+        treso_positive = self.actif.treso[self.etape] >= 0
+        nombre_pintades = 0 < len(self.actif.pintades[self.etape]) < nombre_maximal_pintades
+
+        return treso_positive and nombre_pintades
+
+    def calculer_etape(self):
+
+        self.actif.initialiser_etape()
+        self.etape += 1
+        nb_femelle_ext = len(self.actif.femelle_ext())
+        # print('femelle ext', nb_femelle_ext)
+        nb_femelle_int = len(self.actif.femelle_int())
+        nb_oeuf_ext = len(self.actif.oeufs_int())
+        nb_oeuf_int = len(self.actif.oeufs_ext())
+        decision_etape = self.functionGen.evaluate(np.array([[nb_femelle_ext], [nb_femelle_int], [nb_oeuf_ext], [nb_oeuf_int], [self.etape]]))
+        self.decisions.append(decision_etape)
+
+        # vente
+        nb_femelle_ext_vendre = int(decision_etape[0] * nb_femelle_ext)
+        # print('decision', decision_etape[0])
+        nb_femelle_int_vendre = int(decision_etape[1] * nb_femelle_int)
+        nb_oeuf_ext_vendre = int(decision_etape[2] * nb_oeuf_ext)
+        nb_oeuf_int_vendre = int(decision_etape[3] * nb_oeuf_int)
+        self.actif.vendre_oeufs(nb_oeuf_int_vendre, nb_oeuf_ext_vendre)
+        self.actif.vendre_pintades(nb_femelle_int_vendre, nb_femelle_ext_vendre)
+
+        # eclosion
+        nouvelles_pintades = []
+        oeuf_a_enlever = []
+        for oeuf in self.actif.oeufs[self.etape]:
+            pintade = oeuf.eclore()
+            nouvelles_pintades.append(pintade)
+            self.actif.treso[self.etape] -= cout_veto
+            oeuf_a_enlever.append(oeuf)
+        for oeuf in oeuf_a_enlever:
+            self.actif.oeufs[self.etape].remove(oeuf)
+
+        # ponte
+        nouveaux_oeufs = []
+        for pintade in self.actif.pintades[self.etape]:
+            for k in range(30 // 3):
+                oeuf = pintade.pondre()
+                if oeuf is not None:
+                    nouveaux_oeufs.append(oeuf)
+
+        # mise a jour des attributs
+        self.actif.pintades[self.etape] += nouvelles_pintades
+        self.actif.oeufs[self.etape] += nouveaux_oeufs
+
+        # cout pour l'étape
+        nb_poussins = len(self.actif.poussins())
+        nb_total_pintades = len(self.actif.pintades[self.etape])
+        self.actif.treso[self.etape] -= ( nb_total_pintades - nb_poussins / 2) * cout_nouriture / 12  # nourriture
         for pintadeDebutEtape in self.actif.pintades[self.etape]:
             if pintadeDebutEtape.env == "EXT":
                 self.actif.treso[self.etape] -= cout_pintade_inte

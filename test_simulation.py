@@ -15,10 +15,18 @@ def jeteste():
     decisions = [[0, 0, 200, 200] for i in range(12 * 7)]
     # nb_femelle_ext, nb_femelle_int, nb_oeuf_ext,nb_oeuf_int
 
-    simulation = Simulation(actif, decisions)
-    print(simulation.sim())
-    print("oeufs en stock en temps réel", [len(simulation.actif.oeufs[i]) for i in range(len(simulation.actif.oeufs))])
-    print("pintades en stock en temps réel", [len(simulation.actif.pintades[i]) for i in range(len(simulation.actif.pintades))])
+    #simulation = Simulation(actif, decisions,3)
+    #print(simulation.sim())
+    #print("oeufs en stock en temps réel", [len(simulation.actif.oeufs[i]) for i in range(len(simulation.actif.oeufs))])
+    #print("pintades en stock en temps réel", [len(simulation.actif.pintades[i]) for i in range(len(simulation.actif.pintades))])
+
+    def functionGen(a):
+        return ([1,0.8,0.8,0.7])
+
+    simulation2 = Simulation_Genetique(actif, functionGen,4)
+    print(simulation2.sim())
+    print("oeufs en stock en temps réel avec algo genetique", [len(simulation2.actif.oeufs[i]) for i in range(len(simulation2.actif.oeufs))])
+    print("pintades en stock en temps réel avec algo genetique", [len(simulation2.actif.pintades[i]) for i in range(len(simulation2.actif.pintades))])
 
 
 jeteste()
