@@ -1,5 +1,5 @@
 from const import prix_oeuf_inte, prix_oeufs_exte, prix_vente_adulte_inte, prix_vente_adulte_exte, \
-    prix_vente_vielle_exte, prix_vente_vielle_inte, nombre_maximal_pintades
+    prix_vente_vielle_exte, prix_vente_vielle_inte, nombre_maximal_pintades, cout_nouriture, cout_oeuf, cout_veto, cout_pintade_inte, cout_pintade_exte
 from numpy import random
 
 
@@ -75,7 +75,7 @@ class Actif:
         index = 0
         count = len(sorted_by_ages)
         pintade_a_enlever = []
-        while (nb_vendu_ext < adulte_femelle_exte) and (nb_vendu_int < adulte_femelle_int) and index < count:
+        while index < count:
             pintade_a_vendre = sorted_by_ages[index]
             vendu = False
             if pintade_a_vendre.sexe == "male":
@@ -102,7 +102,7 @@ class Actif:
         oeufs = list(self.oeufs[self.etape])
         nb_oeufs = len(oeufs)
         oeuf_a_jeter = []
-        for index in range(nb_oeufs-1):
+        for index in range(nb_oeufs):
             oeuf = oeufs[index]
             vendu = False
             if (oeuf.env == "EXT") and nb_vendu_ext < oeuf_ext:
@@ -156,10 +156,10 @@ class Simulation:
         for oeuf in self.actif.oeufs[self.etape]:
             pintade = oeuf.eclore()
             nouvelles_pintades.append(pintade)
+            self.actif.treso[self.etape] -= cout_veto
             oeuf_a_enlever.append(oeuf)
         for oeuf in oeuf_a_enlever:
             self.actif.oeufs[self.etape].remove(oeuf)
-
 
         # ponte
         nouveaux_oeufs = []
@@ -173,9 +173,17 @@ class Simulation:
         self.actif.pintades[self.etape] += nouvelles_pintades
         self.actif.oeufs[self.etape] += nouveaux_oeufs
 
+        # cout pour l'étape
+        self.actif.treso[self.etape] -= len(self.actif.pintades[self.etape]) * cout_nouriture / 12  # nourriture
+        for pintadeDebutEtape in self.actif.pintades[self.etape]:
+            if pintadeDebutEtape.env == "EXT":
+                self.actif.treso[self.etape] -= cout_pintade_inte
+            else:
+                self.actif.treso[self.etape] -= cout_pintade_exte
+
     def sim(self):
         for i in range(self.etape_final):
             self.calculer_etape()
             if not(self.respect_des_contraintes()):
-                return [-1]
+                return self.actif.treso + [-1]
         return self.actif.treso
