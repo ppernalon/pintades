@@ -5,12 +5,12 @@ prix_vente_adulte_inte = 3.50
 prix_vente_vielle_exte = 3.80
 prix_vente_vielle_inte = 2
 
-cout_pintade_inte = 1
-cout_pintade_exte = 0.5
-cout_nouriture = 21 # par an par pintade
+cout_pintade_inte = 0.5/12
+cout_pintade_exte = 1/12
+cout_nouriture = 12 # par an par pintade
 cout_oeuf = 0.02  # par oeuf d'embalage
-cout_veto = 3.5  # une fois dans sa vie quand poussin
+cout_veto = 1 # une fois dans sa vie quand poussin
 
 budget_initial = 31000  # calculer grace à initial_estimation
 nombre_initial_pintades = 12938  # nbre de pintades au bout de deux ans
-nombre_maximal_pintades = 600
+nombre_maximal_pintades = 700

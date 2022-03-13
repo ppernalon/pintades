@@ -46,8 +46,8 @@ def initialisation_pintades(N):
             age = (2 * 365 - k) // 30
             u_n.append(u_n[-1] + (u_n[k - 1 - 182]) // 2)
             for i in range((u_n[k - 1 - 182]) // 4):
-                pintades.append(Pintade("femelle", "EXT", age))
-                pintades.append(Pintade("femelle", "INT", age))
+                pintades.append(Pintade("femelle", "EXT", 6))
+                pintades.append(Pintade("femelle", "INT", 6))
     return (u_n[-1], pintades)
 
 

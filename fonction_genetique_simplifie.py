@@ -8,7 +8,7 @@ class FonctionGenetique:
     def __init__(self, nb_entrees, nb_sorties):
         self.nb_entrees = nb_entrees
         self.nb_sorties = nb_sorties
-        self.nb_neurones = 1000
+        self.nb_neurones = 500
         self.matrix1 = np.random.rand(nb_entrees, self.nb_neurones) - 0.5
         self.matrix2 = np.random.rand(self.nb_neurones, nb_sorties) - 0.5
 
@@ -65,13 +65,13 @@ class FonctionGenetique:
                 nouvelle_ligne = []
                 for element in ligne:
                     nouveau_element = element
-                    if (np.random.random() < 0.8):
+                    if (np.random.random() < 0.75):
                         element += (np.random.random() - 0.5) * taux_mutation * element
                     nouvelle_ligne.append(nouveau_element)
                 nouveau_array.append(nouvelle_ligne)
             return np.array(nouveau_array)
 
-        max_mutation = 0.20
+        max_mutation = 0.15
         nouvelle_fg = FonctionGenetique(self.nb_entrees, self.nb_sorties)
         nouvelle_fg.matrix1 = array_mutation(self.matrix1, max_mutation)
         nouvelle_fg.matrix2 = array_mutation(self.matrix2, max_mutation)

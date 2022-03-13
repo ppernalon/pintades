@@ -13,7 +13,7 @@ class Oeuf:
         self.env = env
 
     def eclore(self):
-        return Pintade(self.sexe, self.env)
+        return Pintade(self.sexe, self.env, 0)
 
     def vendre(self):
         if self.env == "EXT":
@@ -23,7 +23,7 @@ class Oeuf:
 
 
 class Pintade:
-    def __init__(self, sexe, env, age=0):
+    def __init__(self, sexe, env, age):
         self.age = age  # mois
         self.sexe = sexe
         self.env = env
@@ -42,14 +42,14 @@ class Pintade:
         return None
 
     def vendre(self):
-        if self.age == 0:
+        if 6 > self.age >= 0:
             return 0
         if self.age >= 6:  # adulte
             if self.env == "EXT":
                 return prix_vente_adulte_exte
             else:
                 return prix_vente_adulte_inte
-        else:  # vielle
+        if self.age >= 6*12:  # vielle
             if self.env == "EXT":
                 return prix_vente_vielle_exte
             else:
@@ -64,10 +64,10 @@ class Actif:
         self.etape = 0
 
     def initialiser_etape(self):
+        self.treso.append(self.treso[self.etape])
+        self.oeufs.append([Oeuf(oeuf.sexe, oeuf.env) for oeuf in self.oeufs[self.etape]])
+        self.pintades.append([Pintade(pintade.sexe, pintade.env, pintade.age) for pintade in self.pintades[self.etape]])
         self.etape += 1
-        self.treso.append(self.treso[self.etape - 1])
-        self.oeufs.append(list(self.oeufs[self.etape - 1]))
-        self.pintades.append(list(self.pintades[self.etape - 1]))
         for pintade in self.pintades[self.etape]:
             pintade.vieillir()
 
@@ -122,16 +122,16 @@ class Actif:
         while index < count:
             pintade_a_vendre = sorted_by_ages[index]
             vendu = False
-            if pintade_a_vendre.sexe == "male":
+            if pintade_a_vendre.sexe == "male" and pintade_a_vendre.age >= 6:
                 vendu = True
-            if pintade_a_vendre.age > 6 * 12:  # 6 ans
+            if pintade_a_vendre.age >= 6 * 12:  # 6 ans
                 vendu = True
             if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "EXT") and (
-                    nb_vendu_ext < adulte_femelle_ext) and (pintade_a_vendre.age > 6):
+                    nb_vendu_ext < adulte_femelle_ext) and (pintade_a_vendre.age >= 6):
                 nb_vendu_ext += 1
                 vendu = True
             if (pintade_a_vendre.sexe == "femelle") and (pintade_a_vendre.env == "INT") and (
-                    nb_vendu_int < adulte_femelle_int) and (pintade_a_vendre.age > 6):
+                    nb_vendu_int < adulte_femelle_int) and (pintade_a_vendre.age >= 6):
                 nb_vendu_int += 1
                 vendu = True
             if vendu:
@@ -192,8 +192,10 @@ class Simulation:
         nb_femelle_int = int(decision_en_cours[1] * len(self.actif.femelle_int()))
         nb_oeuf_ext = int(decision_en_cours[2] * len(self.actif.oeufs_ext()))
         nb_oeuf_int = int(decision_en_cours[3] * len(self.actif.oeufs_int()))
+        print(len(self.actif.pintades[self.etape]))
         self.actif.vendre_oeufs(nb_oeuf_int, nb_oeuf_ext)
         self.actif.vendre_pintades(nb_femelle_int, nb_femelle_ext)
+        print(len(self.actif.pintades[self.etape]))
 
         # eclosion
         nouvelles_pintades = []
@@ -300,6 +302,87 @@ class Simulation_Genetique:
                 self.actif.treso[self.etape] -= cout_pintade_inte
             else:
                 self.actif.treso[self.etape] -= cout_pintade_exte
+
+    def sim(self):
+        for i in range(self.etape_final):
+            self.calculer_etape()
+            if not (self.respect_des_contraintes()):
+                self.actif.treso[-1] = -inf
+                return self.actif.treso
+        return self.actif.treso
+
+
+
+class Simulation_Simplifie:
+    def __init__(self, actif, decisions, max_etape):
+        self.actif = actif
+        self.etape = 0
+        self.etape_final = max_etape
+        self.decisions = decisions
+
+    def respect_des_contraintes(self):
+        treso_positive = self.actif.treso[self.etape] >= 0
+        nombre_pintades = 0 < len(self.actif.pintades[self.etape]) < nombre_maximal_pintades
+
+        return treso_positive and nombre_pintades
+
+    def calculer_etape(self):
+
+        self.actif.initialiser_etape()
+        self.etape = self.actif.etape
+
+        nb_femelle_ext = len(self.actif.femelle_ext())
+        nb_femelle_int = len(self.actif.femelle_int())
+        nb_oeuf_ext = len(self.actif.oeufs_ext())
+        nb_oeuf_int = len(self.actif.oeufs_int())
+        decision_etape = self.decisions[self.etape - 1]
+
+        # vente
+        nb_femelle_ext_vendre = int(decision_etape[0] * nb_femelle_ext)
+        nb_femelle_int_vendre = int(decision_etape[0] * nb_femelle_int)
+        nb_oeuf_ext_vendre = int(0.90 * nb_oeuf_ext)
+        nb_oeuf_int_vendre = int(0.90 * nb_oeuf_int)
+
+#        print("avant vente", len(self.actif.pintades[self.etape]))
+
+        self.actif.vendre_oeufs(nb_oeuf_int_vendre, nb_oeuf_ext_vendre)
+        self.actif.vendre_pintades(nb_femelle_int_vendre, nb_femelle_ext_vendre)
+#        print("apres vente", len(self.actif.pintades[self.etape]))
+
+        # cout pour l'étape
+        nb_poussins = len(self.actif.poussins())
+        nb_total_pintades = len(self.actif.pintades[self.etape])
+        self.actif.treso[self.etape] -= (nb_total_pintades - nb_poussins / 2) * cout_nouriture / 12  # nourriture
+        for pintadeDebutEtape in self.actif.pintades[self.etape]:
+            if pintadeDebutEtape.env == "EXT":
+                self.actif.treso[self.etape] -= cout_pintade_inte
+            else:
+                self.actif.treso[self.etape] -= cout_pintade_exte
+
+        # eclosion
+        nouvelles_pintades = []
+        oeuf_a_enlever = []
+        for oeuf in self.actif.oeufs[self.etape]:
+            pintade = oeuf.eclore()
+            nouvelles_pintades.append(pintade)
+            self.actif.treso[self.etape] -= cout_veto
+            oeuf_a_enlever.append(oeuf)
+        for oeuf in oeuf_a_enlever:
+            self.actif.oeufs[self.etape].remove(oeuf)
+
+        # ponte
+        nouveaux_oeufs = []
+        for pintade in self.actif.pintades[self.etape]:
+            for k in range(30 // 3):
+                oeuf = pintade.pondre()
+                if oeuf is not None:
+                    nouveaux_oeufs.append(oeuf)
+
+        # mise a jour des attributs
+        self.actif.pintades[self.etape] = [Pintade(p.sexe, p.env, p.age) for p in self.actif.pintades[self.etape]] + nouvelles_pintades
+        self.actif.oeufs[self.etape] = [Oeuf(o.sexe, o.env) for o in self.actif.oeufs[self.etape]] + nouveaux_oeufs
+
+#        print("apres eclosion", len(self.actif.pintades[self.etape]))
 
     def sim(self):
         for i in range(self.etape_final):
