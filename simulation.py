@@ -338,16 +338,13 @@ class Simulation_Simplifie:
         decision_etape = self.decisions[self.etape - 1]
 
         # vente
-        nb_femelle_ext_vendre = int(decision_etape[0] * nb_femelle_ext)
-        nb_femelle_int_vendre = int(decision_etape[0] * nb_femelle_int)
+        nb_femelle_ext_vendre = int(decision_etape * nb_femelle_ext)
+        nb_femelle_int_vendre = int(decision_etape * nb_femelle_int)
         nb_oeuf_ext_vendre = int(0.90 * nb_oeuf_ext)
         nb_oeuf_int_vendre = int(0.90 * nb_oeuf_int)
 
-#        print("avant vente", len(self.actif.pintades[self.etape]))
-
         self.actif.vendre_oeufs(nb_oeuf_int_vendre, nb_oeuf_ext_vendre)
         self.actif.vendre_pintades(nb_femelle_int_vendre, nb_femelle_ext_vendre)
-#        print("apres vente", len(self.actif.pintades[self.etape]))
 
         # cout pour l'étape
         nb_poussins = len(self.actif.poussins())
@@ -377,6 +374,7 @@ class Simulation_Simplifie:
                 oeuf = pintade.pondre()
                 if oeuf is not None:
                     nouveaux_oeufs.append(oeuf)
+        nouveaux_oeufs = [Oeuf("male", o.env) for o in nouveaux_oeufs[len(nouveaux_oeufs)//2:]] + [Oeuf("femelle", o.env) for o in nouveaux_oeufs[:len(nouveaux_oeufs)//2]]
 
         # mise a jour des attributs
         self.actif.pintades[self.etape] = [Pintade(p.sexe, p.env, p.age) for p in self.actif.pintades[self.etape]] + nouvelles_pintades

@@ -6,14 +6,13 @@ import numpy as np
 class DecisionGenetiqueSimplifie:
     def __init__(self, nb_mois):
         self.nb_mois = nb_mois
-        self.decisions = np.random.rand(nb_mois, 1)
+        self.decisions = np.random.randint(100, size=nb_mois)/100
 
     def sauvegarder(self):
         with open('decisions_pintades' + date.today().strftime("%d-%m-%Y") + '.ia', 'w') as f:
-            for ligne in self.decisions:
-                for element in ligne:
-                    f.write(str(element))
-                    f.write('\n')
+            for element in self.decisions:
+                f.write(str(element))
+                f.write('\n')                    
 
     def charger(self, fichier):
         with open(fichier, 'r') as f:
@@ -21,30 +20,32 @@ class DecisionGenetiqueSimplifie:
             donnees = [float(line) for line in lines]
             decisions = []
             d = 0
-            for i in range(self.nb_mois + 1):
+            for i in range(self.nb_mois):
                 #mois = []
                 #for k in range(4):
                  #   d += 1
                  #   mois.append(donnees[d])
                 decisions.append(donnees[i])
-            print(decisions)
             self.decisions = decisions
 
     def mutation(self):
         def array_mutation(array, taux_mutation):
             nouveau_array = []
-            for ligne in array:
-                nouvelle_ligne = []
-                for element in ligne:
-                    nouveau_element = element
-                    if (np.random.random() < 0.75):
-                        element += (np.random.random() - 0.5) * taux_mutation * element
-                    nouvelle_ligne.append(nouveau_element)
-                nouveau_array.append(nouvelle_ligne)
+            for element in array:
+                nouveau_element = element
+                if (np.random.random() < 0.66):
+                    r_signe = np.random.random()
+                    if (r_signe > 0.5):
+                        nouveau_element += taux_mutation
+                    else:
+                        nouveau_element -= taux_mutation
+                if (nouveau_element > 1): nouveau_element = 1
+                if (nouveau_element < 0): nouveau_element = 0
+                nouveau_array.append(nouveau_element)
             return np.array(nouveau_array)
 
-        max_mutation = 0.15
+        taux_mutation = 0.02
         nouvelles_decisions = DecisionGenetiqueSimplifie(self.nb_mois)
-        nouvelles_decisions.decisions = array_mutation(self.decisions, max_mutation)
+        nouvelles_decisions.decisions = array_mutation(self.decisions, taux_mutation)
 
         return nouvelles_decisions
