@@ -9,9 +9,8 @@ class FonctionGenetique:
         self.nb_entrees = nb_entrees
         self.nb_sorties = nb_sorties
         self.nb_neurones = 1000
-        self.matrix1 = np.random.rand(nb_entrees, self.nb_neurones)
-        self.matrix2 = np.random.rand(self.nb_neurones, self.nb_neurones)
-        self.matrix3 = np.random.rand(self.nb_neurones, nb_sorties)
+        self.matrix1 = np.random.rand(nb_entrees, self.nb_neurones) - 0.5
+        self.matrix2 = np.random.rand(self.nb_neurones, nb_sorties) - 0.5
 
     def evaluate(self, X):
         def activation1(L):
@@ -20,23 +19,19 @@ class FonctionGenetique:
                 if L[i] < 0:
                     L[i] = 0
 
-        def activation2(L):
-            n = len(L)
-            for i in range(n):
-                temp = np.tanh(L[i])
-                L[i] = temp
-
         X = X / const.nombre_maximal_pintades
         output1 = np.dot(X.T[0], self.matrix1)
+        #print(output1)
+        activation1(output1)
         output2 = np.dot(output1, self.matrix2)
-        activation1(output2)
-        output3 = np.dot(output2, self.matrix3)
-        activation2(output3)
+        # print(output2)
+        # output2 = np.abs(output2 / (1 + np.sum(output2)))
+        output2 = np.abs(np.tanh(output2))
 
-        return output3
+        return output2
 
     def sauvegarder(self):
-        genome1, genome2, genome3 = self.matrix1, self.matrix2, self.matrix3
+        genome1, genome2 = self.matrix1, self.matrix2
         with open('fg_pintades' + date.today().strftime("%d-%m-%Y") + '.ia', 'w') as f:
             for i in range(len(genome1)):
                 for j in range(len(genome1[0])):
@@ -44,29 +39,21 @@ class FonctionGenetique:
             for i in range(len(genome2)):
                 for j in range(len(genome2[0])):
                     f.write("%s\n" % genome2[i][j])
-            for i in range(len(genome3)):
-                for j in range(len(genome3[0])):
-                    f.write("%s\n" % genome3[i][j])
 
     def charger(self, fichier):
         with open(fichier, 'r') as f:
             lines = f.read().splitlines()
             donnees = [float(line) for line in lines]
             genome1 = [[0 for i in range(self.nb_neurones)] for j in range(self.nb_entrees)]
-            genome2 = [[0 for i in range(self.nb_neurones)] for j in range(self.nb_neurones)]
-            genome3 = [[0 for i in range(self.nb_sorties)] for j in range(self.nb_neurones)]
+            genome2 = [[0 for i in range(self.nb_sorties)] for j in range(self.nb_neurones)]
             k = 0
             for i in range(self.nb_entrees):
                 for j in range(self.nb_neurones):
                     genome1[i][j] = donnees[k]
                     k += 1
             for i in range(self.nb_neurones):
-                for j in range(self.nb_neurones):
-                    genome2[i][j] = donnees[k]
-                    k += 1
-            for i in range(self.nb_neurones):
                 for j in range(self.nb_sorties):
-                    genome3[i][j] = donnees[k]
+                    genome2[i][j] = donnees[k]
                     k += 1
             self.matrix1 = genome1
             self.matrix2 = genome2
@@ -78,7 +65,7 @@ class FonctionGenetique:
                 nouvelle_ligne = []
                 for element in ligne:
                     nouveau_element = element
-                    if (np.random.random() < 0.20):
+                    if (np.random.random() < 0.75):
                         element += (np.random.random() - 0.5) * taux_mutation * element
                     nouvelle_ligne.append(nouveau_element)
                 nouveau_array.append(nouvelle_ligne)

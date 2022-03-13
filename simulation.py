@@ -1,5 +1,6 @@
 import numpy as np
 
+from math import inf
 from const import prix_oeuf_inte, prix_oeufs_exte, prix_vente_adulte_inte, prix_vente_adulte_exte, \
     prix_vente_vielle_exte, prix_vente_vielle_inte, nombre_maximal_pintades, cout_nouriture, cout_oeuf, cout_veto, \
     cout_pintade_inte, cout_pintade_exte
@@ -237,12 +238,11 @@ class Simulation:
 
 
 class Simulation_Genetique:
-    def __init__(self, actif, functionGen, max_etape):
+    def __init__(self, actif, decisions, max_etape):
         self.actif = actif
         self.etape = 0
         self.etape_final = max_etape
-        self.decisions = []
-        self.functionGen = functionGen
+        self.decisions = decisions
 
     def respect_des_contraintes(self):
         treso_positive = self.actif.treso[self.etape] >= 0
@@ -255,16 +255,13 @@ class Simulation_Genetique:
         self.actif.initialiser_etape()
         self.etape += 1
         nb_femelle_ext = len(self.actif.femelle_ext())
-        # print('femelle ext', nb_femelle_ext)
         nb_femelle_int = len(self.actif.femelle_int())
         nb_oeuf_ext = len(self.actif.oeufs_int())
         nb_oeuf_int = len(self.actif.oeufs_ext())
-        decision_etape = self.functionGen.evaluate(np.array([[nb_femelle_ext], [nb_femelle_int], [nb_oeuf_ext], [nb_oeuf_int], [self.etape]]))
-        self.decisions.append(decision_etape)
+        decision_etape = self.decisions[self.etape]
 
         # vente
         nb_femelle_ext_vendre = int(decision_etape[0] * nb_femelle_ext)
-        # print('decision', decision_etape[0])
         nb_femelle_int_vendre = int(decision_etape[1] * nb_femelle_int)
         nb_oeuf_ext_vendre = int(decision_etape[2] * nb_oeuf_ext)
         nb_oeuf_int_vendre = int(decision_etape[3] * nb_oeuf_int)
@@ -306,7 +303,8 @@ class Simulation_Genetique:
 
     def sim(self):
         for i in range(self.etape_final):
-            if not (self.respect_des_contraintes()):
-                return self.actif.treso + [-1]
             self.calculer_etape()
+            if not (self.respect_des_contraintes()):
+                self.actif.treso[-1] = -inf
+                return self.actif.treso
         return self.actif.treso

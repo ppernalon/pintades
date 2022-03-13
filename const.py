@@ -13,4 +13,4 @@ cout_veto = 3.5  # une fois dans sa vie quand poussin
 
 budget_initial = 31000  # calculer grace à initial_estimation
 nombre_initial_pintades = 12938  # nbre de pintades au bout de deux ans
-nombre_maximal_pintades = 20000
+nombre_maximal_pintades = 600
